@@ -1,8 +1,22 @@
+import { useState } from "react"
+import {
+  ArrowRight,
+  Check,
+} from "lucide-react"
+
 function SortCard({
   onSortByName,
   onApplyOrder,
   applyingOrder,
+  hasChanges,
 }) {
+  const [selectedSort, setSelectedSort] = useState(null)
+
+  function handleSortByName() {
+    setSelectedSort("name")
+    onSortByName()
+  }
+
   return (
     <section className="sort-card">
       <div className="sort-header">
@@ -15,23 +29,23 @@ function SortCard({
         </h2>
 
         <p>
-          Escolha o tipo de ordenação para sua
-          playlist.
+          Escolha o tipo de ordenação para sua playlist.
         </p>
       </div>
 
       <div className="sort-options">
         <button
-          className="sort-option active"
-          onClick={onSortByName}
+          className={`sort-option ${selectedSort === "name" ? "active" : ""
+            }`}
+          onClick={handleSortByName}
         >
           <span className="sort-option-icon">
-            A→Z
+            A-Z
           </span>
 
           <span className="sort-option-info">
             <strong>
-              Nome A → Z
+              Nome A-Z
             </strong>
 
             <small>
@@ -39,24 +53,30 @@ function SortCard({
             </small>
           </span>
 
-          <span className="sort-option-arrow">
-            →
-          </span>
+          <ArrowRight size={18} />
         </button>
       </div>
 
       <button
-        className="organize-button"
+        className={`organize-button ${!hasChanges ? "organize-button-disabled" : ""}`}
         onClick={onApplyOrder}
-        disabled={applyingOrder}
+        disabled={applyingOrder || !hasChanges }
       >
         <span>
           {applyingOrder
             ? "Atualizando Spotify..."
-            : "Aplicar no Spotify"}
+            : !hasChanges
+              ? "Playlist já organizada"
+              : "Aplicar no Spotify"}
         </span>
 
-        <span>→</span>
+        <span>
+          {hasChanges ? (
+            <ArrowRight size={18} />
+          ) : (
+            <Check size={18} />
+          )}
+        </span>
       </button>
     </section>
   )

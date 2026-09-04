@@ -5,10 +5,7 @@ function PlaylistCard({ tracks = [], playlist }) {
 
         <div className="playlist-cover">
           {playlist?.image ? (
-            <img
-              src={playlist.image}
-              alt={playlist.name}
-            />
+            <img src={playlist.image} alt={playlist.name} />
           ) : (
             <span>♫</span>
           )}
@@ -39,20 +36,13 @@ function PlaylistCard({ tracks = [], playlist }) {
           </div>
         ) : (
           tracks.map((track, index) => (
-            <div
-              className="track-item"
-              key={track.uri}
-            >
+            <div className="track-item" key={track.uri}>
               <span className="track-number">
                 {String(index + 1).padStart(2, "0")}
               </span>
 
               {track.albumImage && (
-                <img
-                  className="track-cover"
-                  src={track.albumImage}
-                  alt=""
-                />
+                <img className="track-cover" src={track.albumImage} alt="" />
               )}
 
               <div className="track-details">

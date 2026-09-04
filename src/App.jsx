@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react"
-import {
-  getAccessToken,
-  getValidAccessToken,
-  getPlaylistTracks,
-  getCurrentUserProfile,
-  getPlaylist,
-  extractPlaylistId,
-  updatePlaylistOrder
-} from "./services/spotify"
+import { getAccessToken, getValidAccessToken, getPlaylistTracks, getCurrentUserProfile, getPlaylist, extractPlaylistId, updatePlaylistOrder } from "./services/spotify"
 import { sortTracksByName } from "./utils/sorting"
 
 import Header from "./components/Header"
@@ -16,6 +8,7 @@ import PlaylistCard from "./components/PlaylistCard"
 import SortCard from "./components/SortCard"
 import HowItWorks from "./components/HowItWorks"
 import Footer from "./components/Footer"
+import Toast from "./components/Toast"
 
 function App() {
   const [user, setUser] = useState(null)
@@ -25,31 +18,24 @@ function App() {
   const [loadingPlaylist, setLoadingPlaylist] = useState(false)
   const [playlistId, setPlaylistId] = useState(null)
   const [applyingOrder, setApplyingOrder] = useState(false)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     async function initializeSpotify() {
       try {
-        const params = new URLSearchParams(
-          window.location.search
-        )
-
-        const code = params.get("code")
-
-        let accessToken
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        let accessToken;
 
         if (code) {
           // Primeiro login: troca o código pelo token
-          accessToken = await getAccessToken(code)
-
+          accessToken = await getAccessToken(code);
           // Remove ?code= da URL
-          window.history.replaceState(
-            {},
-            document.title,
-            window.location.pathname
-          )
-        } else {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } 
+        else {
           // Página recarregada: tenta recuperar a sessão
-          accessToken = await getValidAccessToken()
+          accessToken = await getValidAccessToken();
         }
 
         // Não existe sessão
@@ -58,155 +44,163 @@ function App() {
         }
 
         // Busca o perfil do usuário
-        const profile =
-          await getCurrentUserProfile(accessToken)
+        const profile = await getCurrentUserProfile(accessToken);
+        setUser(profile);
 
-        setUser(profile)
-
-      } catch (error) {
-        console.error(
-          "Erro ao inicializar Spotify:",
-          error
-        )
+      } 
+      catch (error) {
+        console.error("Erro ao inicializar Spotify:", error);
       }
     }
 
-    initializeSpotify()
-  }, [])
+    initializeSpotify();
+  }, []);
 
   async function handleLoadPlaylist(url) {
     try {
-      setLoadingPlaylist(true)
+      setLoadingPlaylist(true);
 
-      const playlistId = extractPlaylistId(url)
+      const playlistId = extractPlaylistId(url);
 
       if (!playlistId) {
-        alert(
-          "Cole um link válido de uma playlist do Spotify."
-        )
-        return
+        showToast("error", "Link inválido", "Cole o link de uma playlist válida do Spotify.");
+        return;
       }
 
-      const accessToken = await getValidAccessToken()
+      const accessToken = await getValidAccessToken();
 
       if (!accessToken) {
-        alert("Faça login com o Spotify primeiro.")
-        return
+        showToast("error", "Spotify não conectado", "Entre com sua conta do Spotify para continuar.");
+        return;
       }
 
-      const playlistData =
-        await getPlaylist(
-          accessToken,
-          playlistId
-        )
+      const playlistData = await getPlaylist(accessToken, playlistId);
+      const playlistTracks = await getPlaylistTracks(accessToken, playlistId);
 
-      const playlistTracks =
-        await getPlaylistTracks(
-          accessToken,
-          playlistId
-        )
+      setPlaylistId(playlistId);
+      setPlaylist(playlistData);
+      setTracks(playlistTracks);
+      setOrderedTracks(playlistTracks);
 
-      setPlaylistId(playlistId)
-      setPlaylist(playlistData)
-      setTracks(playlistTracks)
-      setOrderedTracks(playlistTracks)
+    } 
+    catch (error) {
+      console.error("Erro ao carregar playlist:", error);
 
-    } catch (error) {
-      console.error(
-        "Erro ao carregar playlist:",
-        error
-      )
-
-      alert(
-        "Não foi possível carregar essa playlist."
-      )
-    } finally {
-      setLoadingPlaylist(false)
+      showToast("error", "Não foi possível carregar", "Verifique o link da playlist e tente novamente.");
+    } 
+    finally {
+      setLoadingPlaylist(false);
     }
   }
 
   async function handleApplyOrder() {
+    if (!hasOrderChanged()) {
+      return
+    }
+
     try {
-      if (
-        !playlistId ||
-        !playlist ||
-        tracks.length === 0
-      ) {
+      if (!playlistId || !playlist || tracks.length === 0) {
         return
       }
 
-      const accessToken =
-        await getValidAccessToken()
+      const accessToken = await getValidAccessToken();
 
       if (!accessToken) {
-        alert("Faça login com o Spotify primeiro.")
-        return
+        showToast("error", "Spotify não conectado", "Entre com sua conta do Spotify para continuar.");
+        return;
       }
 
-      setApplyingOrder(true)
+      setApplyingOrder(true);
 
-      const newSnapshotId =
-        await updatePlaylistOrder(
-          accessToken,
-          playlistId,
-          tracks,
-          orderedTracks,
-          playlist.snapshotId
-        )
+      const newSnapshotId = await updatePlaylistOrder(accessToken, playlistId, tracks, orderedTracks, playlist.snapshotId);
 
       setPlaylist((currentPlaylist) => ({
         ...currentPlaylist,
         snapshotId: newSnapshotId,
-      }))
+      }));
 
-      setTracks(orderedTracks)
+      setTracks(orderedTracks);
 
-      alert(
-        "Playlist organizada com sucesso! 🎉"
-      )
+      showToast("success", "Playlist organizada!", "A nova ordem já foi aplicada no Spotify.");
 
-    } catch (error) {
-      console.error(
-        "Erro ao aplicar ordem:",
-        error
-      )
+    } 
+    catch (error) {
+      console.error("Erro ao aplicar ordem:", error);
 
-      alert(
-        "Não foi possível atualizar a playlist."
-      )
-    } finally {
-      setApplyingOrder(false)
+      showToast("error", "Não foi possível atualizar", "O Spotify não conseguiu alterar a playlist. Tente novamente.");
+    } 
+    finally {
+      setApplyingOrder(false);
     }
   }
 
   function handleSortByName() {
-    const sorted = sortTracksByName(tracks)
+    const sorted = sortTracksByName(tracks);
+    setOrderedTracks(sorted);
+  }
 
-    setOrderedTracks(sorted)
+  function showToast(type, title, message) {
+    setToast({type, title, message,});
+
+    setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  }
+
+  function hasOrderChanged() {
+    if (tracks.length !== orderedTracks.length) {
+      return true;
+    }
+
+    return tracks.some((track, index) => track.uri !== orderedTracks[index]?.uri);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("spotify_access_token");
+    localStorage.removeItem("spotify_refresh_token");
+    localStorage.removeItem("spotify_token_expires_at");
+    localStorage.removeItem("spotify_code_verifier");
+
+    setUser(null);
+    setPlaylist(null);
+    setPlaylistId(null);
+    setTracks([]);
+    setOrderedTracks([]);
   }
 
   return (
     <main>
-      <Header user={user} />
+      <Header
+        user={user}
+        onLogout={handleLogout}
+      />
       <Hero
         onLoadPlaylist={handleLoadPlaylist}
         loading={loadingPlaylist}
       />
+
+      <HowItWorks />
 
       <section className="content-section">
         <PlaylistCard
           tracks={orderedTracks}
           playlist={playlist}
         />
+
         <SortCard
           onSortByName={handleSortByName}
           onApplyOrder={handleApplyOrder}
           applyingOrder={applyingOrder}
+          hasChanges={hasOrderChanged()}
         />
       </section>
-
-      <HowItWorks />
+      
       <Footer />
+
+      <Toast
+        toast={toast}
+        onClose={() => setToast(null)}
+      />
     </main>
   )
 }

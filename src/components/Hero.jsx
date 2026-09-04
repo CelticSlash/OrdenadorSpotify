@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Link, ArrowRight } from "lucide-react"
 
 function Hero({ onLoadPlaylist, loading }) {
   const [playlistUrl, setPlaylistUrl] = useState("")
@@ -16,19 +17,15 @@ function Hero({ onLoadPlaylist, loading }) {
   return (
     <section className="hero">
       <div className="hero-content">
-        <span className="hero-label">
-          ORGANIZE SUA PLAYLIST
-        </span>
 
         <h1>
           Suas músicas.
-          <br />
-          <span>Do seu jeito.</span>
+          <br/>
+          Do seu jeito.
         </h1>
 
         <p>
-          Organize sua playlist do Spotify
-          de forma rápida e simples.
+          Organize sua playlist do Spotify de forma rápida e simples.
         </p>
       </div>
 
@@ -37,33 +34,20 @@ function Hero({ onLoadPlaylist, loading }) {
           COLE O LINK DA SUA PLAYLIST
         </span>
 
-        <form
-          className="playlist-url-form"
-          onSubmit={handleSubmit}
-        >
+        <form className="playlist-url-form" onSubmit={handleSubmit}>
           <div className="playlist-url-input">
-            <span>↗</span>
+            <Link size={18} />
 
-            <input
-              type="text"
-              placeholder="https://open.spotify.com/playlist/..."
-              value={playlistUrl}
+            <input type="text" placeholder="https://open.spotify.com/playlist/..." value={playlistUrl}
               onChange={(event) =>
                 setPlaylistUrl(event.target.value)
               }
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={!playlistUrl.trim() || loading}
-            className="load-playlist-button"
-          >
-            {loading
-              ? "Carregando..."
-              : "Carregar playlist"}
-
-            <span>→</span>
+          <button type="submit" disabled={!playlistUrl.trim() || loading} className="load-playlist-button">
+            {loading ? "Carregando..." : "Carregar playlist"}
+            <ArrowRight size={18} />
           </button>
         </form>
       </div>
