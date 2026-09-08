@@ -54,10 +54,6 @@ function PlaylistCard({ tracks = [], playlist }) {
                   {track.artist}
                 </span>
               </div>
-
-              <span className="track-arrow">
-                →
-              </span>
             </div>
           ))
         )}
